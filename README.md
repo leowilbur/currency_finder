@@ -9,6 +9,9 @@ This repository contains an implementation of the Currency Finder API.
     - `models` contains all the data model declarations and a basic CRUD layer,
     - `service` contains an implementation of the REST API,
     - `api` has all the route and middlewares,
+
+      - `middlewares` has handler implements like `logger`, `authorization`, `error` handler
+      - `routes` has handler implements for route API
     - `loaders` has all the dependencies component,
   - `.env` is the environment configuration
   - the root directory contains mostly configuration files
