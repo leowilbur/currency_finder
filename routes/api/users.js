@@ -3,6 +3,7 @@ var router = require('express').Router();
 var passport = require('passport');
 var User = mongoose.model('User');
 var auth = require('../auth');
+const { check, validationResult } = require('express-validator');
 
 router.get('/user', auth.required, function(req, res, next){
   User.findById(req.payload.id).then(function(user){
@@ -60,11 +61,26 @@ router.post('/users/login', function(req, res, next){
   })(req, res, next);
 });
 
-router.post('/users', function(req, res, next){
+router.post('/users', [
+  check('user.email').isEmail().withMessage('email is invalid format'),
+  check('user.password')
+    .isLength({ min: 8 }).withMessage('must be at least 8 chars long')
+    .matches(/[a-z]/).withMessage('must contain a lowercase letter')
+    .matches(/[A-Z]/).withMessage('must contain a uppercase letter')
+    .matches(/[0-9]/).withMessage('must contain a number')
+    .matches(/[!@#$%^&*]/).withMessage('must contain a special character')
+    ,
+],function(req, res, next){
   var user = new User();
 
   user.username = req.body.user.username;
   user.email = req.body.user.email;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
   user.setPassword(req.body.user.password);
 
   user.save().then(function(){
