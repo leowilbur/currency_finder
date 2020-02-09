@@ -40,13 +40,19 @@ router.put('/user', auth.required, function (req, res, next) {
   }).catch(next);
 });
 
-router.post('/users/login', function (req, res, next) {
-  if (!req.body.user.email) {
-    return res.status(422).json({ errors: { email: "can't be blank" } });
-  }
-
-  if (!req.body.user.password) {
-    return res.status(422).json({ errors: { password: "can't be blank" } });
+router.post('/users/login', [
+  check('user.email').isEmail().withMessage({ error_code: "user_email_invalid", error_message: 'email is invalid format' }),
+  check('user.password')
+    .isLength({ min: 8 }).withMessage({ error_code: "user_password_min_length", error_message: 'must be at least 8 chars long' })
+    .matches(/[a-z]/).withMessage({ error_code: "user_password_contain_lowercase", error_message: 'must contain a lowercase letter' })
+    .matches(/[A-Z]/).withMessage({ error_code: "user_password_contain_uppercase", error_message: 'must contain a uppercase letter' })
+    .matches(/[0-9]/).withMessage({ error_code: "user_password_contain_number", error_message: 'must contain a number' })
+    .matches(/[!@#$%^&*]/).withMessage({ error_code: "user_password_special_character", error_message: 'must contain a special character' })
+  ,
+],function (req, res, next) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json(errors.array()[0].msg);
   }
 
   passport.authenticate('local', { session: false }, function (err, user, info) {
@@ -62,7 +68,15 @@ router.post('/users/login', function (req, res, next) {
 });
 
 router.post('/users', [
-  check('user.email').isEmail().withMessage('email is invalid format'),
+  check('user.email')
+    .isEmail().withMessage({ error_code: "user_email_invalid", error_message: 'email is invalid format' })
+    .custom(value => {
+      return User.findOne({email: value}).then(user => {
+        if (user) {
+          return Promise.reject({ error_code: "user_email_exist", error_message: 'email already in use' });
+        }
+      })
+    }),
   check('user.password')
     .isLength({ min: 8 }).withMessage({ error_code: "user_password_min_length", error_message: 'must be at least 8 chars long' })
     .matches(/[a-z]/).withMessage({ error_code: "user_password_contain_lowercase", error_message: 'must contain a lowercase letter' })
@@ -73,7 +87,7 @@ router.post('/users', [
 ], function (req, res, next) {
   var user = new User();
 
-  user.username = req.body.user.username;
+  user.username = req.body.user.email;
   user.email = req.body.user.email;
 
   const errors = validationResult(req);
