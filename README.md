@@ -27,3 +27,5 @@ yarn start
 - [express-jwt](https://github.com/auth0/express-jwt) - Middleware for validating JWTs for authentication
 - [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) - For generating JWTs used by authentication
 - [mongoose](https://github.com/Automattic/mongoose) - For modeling and mapping MongoDB data to javascript 
+
+##
